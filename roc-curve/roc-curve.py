@@ -1,33 +1,34 @@
 import numpy as np
 
 def roc_curve(y_true, y_score):
-    # 1. Sort by score descending
-    zipped = sorted(zip(y_score, y_true), key=lambda x: x[0], reverse=True)
-    sorted_scores = [x[0] for x in zipped]
-    sorted_y_true = [x[1] for x in zipped]
+    """
+    Compute ROC curve from binary labels and scores.
+    """
+    fpr = [0]
+    tpr = [0]
 
-    total_pos = sum(y_true) # More efficient than .count(1) for large lists
-    total_neg = len(y_true) - total_pos
+    TP = 0
+    FN = 0
+    FP = y_true.count(1)
+    TN = y_true.count(0)
 
-    # 2. Initialize
-    fpr = [0.0]
-    tpr = [0.0]
+    zipped_pairs = zip(y_score, y_true)
+
+    sorted_pairs = sorted(zipped_pairs, key=lambda pair: pair[0], reverse=True)
+    result = [item[1] for item in sorted_pairs]
+
+    y_score.sort(reverse=True)
     thresholds = [np.inf]
-    tp = 0
-    fp = 0
 
-    # 3. Calculate with handling for ties
-    for i in range(len(sorted_y_true)):
-        if sorted_y_true[i] == 1:
-            tp += 1
+    for i in range(len(y_score)):
+        if result[i] == 1:
+            TP += 1
         else:
-            fp += 1
-        
-        # KEY FIX: Only add a point if this is the LAST occurrence of this score
-        # OR if it's the very last element in the list.
-        if i + 1 == len(sorted_y_true) or sorted_scores[i] != sorted_scores[i+1]:
-            fpr.append(fp / total_neg)
-            tpr.append(tp / total_pos)
-            thresholds.append(sorted_scores[i])
+            FN += 1
 
-    return np.array(fpr), np.array(tpr), np.array(thresholds)
+        if i + 1 == len(y_true) or y_score[i] != y_score[i+1]:
+            fpr.append(FN / FP)
+            tpr.append(TP / TN)
+            thresholds.append(y_score[i])
+    
+    return (fpr, tpr, thresholds)
